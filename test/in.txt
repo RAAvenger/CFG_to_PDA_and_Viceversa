@@ -1,0 +1,6 @@
+S aS
+S bSA
+A aAA
+A bB
+B bB
+B $
