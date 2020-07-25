@@ -23,9 +23,9 @@ class ProductionRule:
             self.rightHand.add(item)
 
     def ToString(self):
-        string = self.leftHand + "->"
-        for right in self.rightHand:
-            string += right + "|"
+        string = self.leftHand + " ->"
+        for right in sorted(self.rightHand):
+            string += " " + right + " |"
         return string[:-1]
 
 
@@ -33,16 +33,13 @@ class CFG:
     def __init__(self):
         self.variables = set()
         self.terminals = set()
+        self.terminals.add("$")
         self.rules = {}
 
-    def __init__(self, inputText):
+    def textToCFG(self, inputText):
         """
         Get text and find Variables, Terminals and rules then create a CFG object.
         """
-        self.variables = set()
-        self.terminals = set()
-        self.terminals.add("$")
-        self.rules = {}
         for char in inputText:
             if char.islower():
                 self.AddTerminal(char)
@@ -51,12 +48,6 @@ class CFG:
         inputText = inputText.splitlines()
         for rule in inputText:
             self.AddRule(*rule.split())
-
-    def ToString(self):
-        string = ""
-        for variable in self.rules:
-            string = string + self.rules[variable].ToString() + "\n"
-        return string[:-2]
 
     def AddVariable(self, *VariableName):
         """
@@ -81,18 +72,22 @@ class CFG:
         if not right:
             raise Exception("AddRule: empty right.")
         terminal, *variables, = right
-        if (
-            left in self.variables
-            and terminal in self.terminals
-            and all(item in self.variables for item in variables)
-        ):
+        if left in self.variables and terminal in self.terminals:
             self.rules[left].AddRight(right)
+
+    def ToString(self):
+        string = ""
+        for variable in self.rules:
+            string = string + self.rules[variable].ToString() + "\n"
+        string = string.replace("$", "\u03BB")
+        return string[:-1]
 
     def ToPDA(self):
         """
         create a PDA from this CFG
         """
-        pda = PDA(3, 0, 2)
+        pda = PDA()
+        pda.SetStates(3, 0, 2)
         pda.AddTransition(0, 1, "$", "z", "Sz")
         pda.AddTransition(1, 2, "$", "z", "z")
         for terminal in self.terminals:
@@ -111,43 +106,124 @@ class Transition:
         self.topOfStack = topOfStack
         self.stackPushValue = stackPushValue
 
+    def ToString(self):
+        string = (
+            "\u03B4(q"
+            + self.state1
+            + ","
+            + self.inputChar
+            + ","
+            + self.topOfStack
+            + ") = (q"
+            + self.state2
+            + ","
+            + self.stackPushValue
+            + ")"
+        )
+        return string
+
 
 class PDA:
     def __init__(self):
-        self.statesCount = 0
-        self.startState = 0
-        self.acceptingState = 0
-        self.transitions = set()
+        self.transitions = {}
+        self.inputAlfabet = set()
+        self.stackAlfabet = set()
 
-    def __init__(self, text):
-        text = text.splitlines()
-        self.statesCount = int(text[0])
-        self.startState = 0
-        self.acceptingState = int(text[1])
-        del [text[1], text[0]]
-        self.transitions = set()
-        for item in text:
+    def TextToPDA(self, inputText):
+        """
+        creat PDA from InputText.
+        """
+        inputText = inputText.splitlines()
+        self.SetStates(int(inputText[0]), 0, int(inputText[1]))
+        del [inputText[1], inputText[0]]
+        for item in inputText:
             item = item.split()
-            self.AddTransitions(item[0], item[3], item[1], item[2], item[4])
+            self.AddTransition(item[0], item[3], item[1], item[2], item[4])
+            self.AddInputChar(item[1])
+            self.AddStackChar(*item[2], *item[4])
 
-    def __init__(self, statesCount, startState, acceptingState):
+    def SetStates(self, statesCount, startState, acceptingState):
+        """
+        get self, statesCount, startState & acceptingState then set them and create dictionary for PDA transitions.
+        """
         self.statesCount = statesCount
         self.startState = startState
         self.acceptingState = acceptingState
-        self.transitions = set()
+        for i in range(self.statesCount):
+            self.transitions[str(i)] = set()
+
+    def AddInputChar(self, *char):
+        for item in char:
+            self.inputAlfabet.add(item)
+
+    def AddStackChar(self, *char):
+        for item in char:
+            self.stackAlfabet.add(item)
 
     def AddTransition(self, state1, state2, inputChar, topOfStack, stackPushValue):
         """
         get Transition data and add new Transition to PDA's transitions.
         """
-        self.transitions.add(
-            Transition(state1, state2, inputChar, topOfStack, stackPushValue)
+        self.transitions[str(state1)].add(
+            Transition(str(state1), str(state2), inputChar, topOfStack, stackPushValue)
         )
 
+    def ToString(self):
+        string = ""
+        for state in self.transitions.values():
+            for transition in state:
+                string += transition.ToString() + "\n"
+        string = string.replace("$", "\u03BB")
+        return string[:-2]
 
-## main
-txt = FileRead("test\in.txt")
-cfg=CFG(txt)
-print(cfg.ToString())
-cfg.ToPDA()
-pass
+    def ToCFG(self):
+        """
+        create CFG from this PDA.
+        """
+        cfg = CFG()
+        cfg.AddTerminal(*self.inputAlfabet, "$")
+        for state in self.transitions.values():
+            for transition in state:
+                if transition.stackPushValue == "$":
+                    cfg.AddVariable(
+                        "q"
+                        + transition.state1
+                        + transition.topOfStack
+                        + "q"
+                        + transition.state2
+                    )
+                    cfg.AddRule(
+                        "q"
+                        + transition.state1
+                        + transition.topOfStack
+                        + "q"
+                        + transition.state2,
+                        transition.inputChar,
+                    )
+                else:
+                    for qk in range(self.statesCount):
+                        for ql in range(self.statesCount):
+                            left = (
+                                "q"
+                                + transition.state1
+                                + transition.topOfStack
+                                + "q"
+                                + str(qk)
+                            )
+                            right = (
+                                transition.inputChar
+                                + "(q"
+                                + transition.state2
+                                + transition.stackPushValue[0]
+                                + "q"
+                                + str(ql)
+                                + ")(q"
+                                + str(ql)
+                                + transition.stackPushValue[1]
+                                + "q"
+                                + str(qk)
+                                + ")"
+                            )
+                            cfg.AddVariable(left)
+                            cfg.AddRule(left, right)
+        return cfg
