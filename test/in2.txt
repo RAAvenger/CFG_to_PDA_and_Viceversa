@@ -1,0 +1,9 @@
+2
+1
+0 a z 0 Az
+0 a A 0 AA
+0 b z 0 Bz
+0 b B 0 BB
+0 a B 0 $
+0 b A 0 $
+0 $ z 1 $
