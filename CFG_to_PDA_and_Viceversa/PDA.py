@@ -7,6 +7,9 @@ class Transition:
         self.stackPushValue = stackPushValue
 
     def ToString(self):
+        """
+        return transition as string.
+        """
         string = (
             "\u03B4(q"
             + self.state1
@@ -53,10 +56,16 @@ class PDA:
             self.transitions[str(i)] = set()
 
     def AddInputChar(self, *char):
+        """
+        Add char to input alfabet.
+        """
         for item in char:
             self.inputAlfabet.add(item)
 
     def AddStackChar(self, *char):
+        """
+        Add char to stack alfabet.
+        """
         for item in char:
             self.stackAlfabet.add(item)
 
@@ -69,6 +78,9 @@ class PDA:
         )
 
     def ToString(self):
+        """
+        return PDA as string.
+        """
         string = ""
         for state in self.transitions.values():
             for transition in state:

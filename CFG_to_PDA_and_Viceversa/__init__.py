@@ -4,7 +4,7 @@ import PDA
 
 def FileRead(path):
     """
-    Read file from path and return CFG.
+    Read file from path and return text.
     """
     try:
         inputFile = open(path)

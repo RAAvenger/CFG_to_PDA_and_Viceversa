@@ -10,10 +10,16 @@ class ProductionRule:
             self.rightHand.add(item)
 
     def AddRight(self, *right):
+        """
+        Add right hand to rule.
+        """
         for item in right:
             self.rightHand.add(item)
 
     def ToString(self):
+        """
+        Return All rules with same left hand as string.
+        """
         string = self.leftHand + " ->"
         for right in self.rightHand:
             string += " " + right + " |"
@@ -67,6 +73,9 @@ class CFG:
             self.rules[left].AddRight(right)
 
     def ToString(self):
+        """
+        return CFG as string.
+        """
         string = "V = { "
         for variable in self.variables:
             string += variable + ", "
