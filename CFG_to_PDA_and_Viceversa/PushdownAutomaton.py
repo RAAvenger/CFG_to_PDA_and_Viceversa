@@ -92,7 +92,7 @@ class PDA:
         """
         create CFG from this PDA.
         """
-        from CFG import CFG
+        from ContextFreeGrammar import CFG
 
         cfg = CFG()
         cfg.AddTerminal(*self.inputAlfabet, "$")

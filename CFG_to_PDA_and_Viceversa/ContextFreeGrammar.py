@@ -98,7 +98,7 @@ class CFG:
         """
         create a PDA from this CFG
         """
-        from PDA import PDA
+        from PushdownAutomaton import PDA
 
         pda = PDA()
         pda.SetStates(3, 0, 2)
